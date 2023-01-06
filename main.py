@@ -12,7 +12,7 @@ import miniball
 import matplotlib.pyplot as plt
 
 # Get Čech complex
-def cech(S, epsilon) :
+def cech2(S, epsilon) :
     # Get all edges using VR
     vertices, edges = VR_edges_only(S, epsilon*2)
 
@@ -241,18 +241,21 @@ def checkObsolescence(points, r, R) :
         print(len(points_copy))
 
         #cech_cx = cech(points_copy, R)
-        betti0 = -1
-        betti1 = -1
-        euler = -1
-        if 2 in cech_cx:
-            cech_sxes = cech_cx[2]
-            sphere = SimplicialComplex(simplices=cech_sxes)
-            betti0 = sphere.betti_number(0)
-            betti1 = sphere.betti_number(1)
-            euler = sphere.euler_characteristics()
-            print(cech_cx[2])
+        ac = AlphaComplex(points_copy)
+        stree = ac.create_simplex_tree(max_alpha_square=R ** 2)
 
-        rips_complex = VR_edges_only(points, r)
+        cech_sxes = []
+        for simplex in stree.get_simplices():
+            cech_sxes.append(tuple(simplex[0]))
+
+        sphere = SimplicialComplex(simplices=cech_sxes)
+        euler = sphere.euler_characteristics()
+
+        betti0 = sphere.betti_number(0)
+        betti1 = sphere.betti_number(1)
+        betti2 = sphere.betti_number(2)
+
+        rips_complex = VR_edges_only(points_copy, r)
         vr_components = numberOfComponents(rips_complex[0], rips_complex[1])
 
         print(str(R) + ' --- b0 : ' + str(betti0) + ' b1: ' + str(betti1) + ' b2: ' + str(betti2) + ' Euler: ' + str(euler))
@@ -308,50 +311,33 @@ if __name__ == '__main__':
     print(euler)
     data = export_ply(cech_sxes, points)
 
-    f = open("test.ply", "w")
+    f = open("sphere.ply", "w")
     f.write(data)
     f.close()
-    collapsed = collapse(cech_sxes, False)
-
-    data = export_ply(collapsed, points)
-
-    f = open("test2.ply", "w")
-    f.write(data)
-    f.close()
-
-    betti0 = -1
-    betti1 = -1
-    cech_sxes = collapsed
-    sphere = SimplicialComplex(simplices=cech_sxes)
-    betti0 = sphere.betti_number(0)
-    betti1 = sphere.betti_number(1)
-    betti2 = sphere.betti_number(2)
-
-    print(collapsed)
-    print(betti0)
-    print(betti1)
-    print(betti2)
 
     vital_points, obsoletePoints = checkObsolescence(points, r, R)
     print(vital_points)
     print(obsoletePoints)
 
 
-    cech_cx = cech(vital_points, R)
-    betti0 = -1
-    betti1 = -1
-    if 2 in cech_cx:
-        cech_sxes = cech_cx[2]
-        sphere = SimplicialComplex(simplices=cech_sxes)
-        betti0 = sphere.betti_number(0)
-        betti1 = sphere.betti_number(1)
+    ac = AlphaComplex(vital_points)
+    stree = ac.create_simplex_tree(max_alpha_square=R ** 2)
+    cech_sxes = []
+    for simplex in stree.get_simplices() :
+        cech_sxes.append(tuple(simplex[0]))
 
-    print(cech_cx)
+    sphere = SimplicialComplex(simplices=cech_sxes)
+    betti0 = sphere.betti_number(0)
+    betti1 = sphere.betti_number(1)
+    betti2 = sphere.betti_number(2)
+    euler = sphere.euler_characteristics()
     print(betti0)
     print(betti1)
+    print(betti2)
+    print(euler)
 
     data = export_ply(cech_sxes, points)
 
-    f = open("test3.ply", "w")
+    f = open("sphere_no_obsolete_points.ply", "w")
     f.write(data)
     f.close()
