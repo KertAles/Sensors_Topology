@@ -69,6 +69,76 @@ def expandComponent(vert, G):
     return component
 
 
+def get_collapsibles(S, progress) :
+    collapsible = []
+
+    for sx1 in S :
+        i = len(sx1) - 1
+        faces = []
+
+        while i > 0 :
+
+            for comb in combinations(sx1, i) :
+                is_face = True
+                for sx2 in S:
+                    if sx1 != sx2 and set(comb).issubset(set(sx2)) :
+                        is_face = False
+                        break
+                if is_face :
+                    faces.append(comb)
+
+            if len(faces) > 0 :
+                break
+
+            i = i - 1
+        for face in faces :
+            collapsible.append([sx1, face])
+
+    return collapsible
+
+
+
+def collapse(S, progress=True) :
+    collapsible = [[0, 0]]
+    if progress :
+        count = 0
+        print('Original simplicial complex : ' + str(S))
+
+    while len(collapsible) > 0 :
+        collapsible = get_collapsibles(S, progress)
+
+        if progress :
+            count += 1
+            print(str(count) + '. collapse : ')
+            print('Free faces : ' + str(collapsible))
+
+        if len(collapsible) > 0 :
+            collaps = collapsible[0]
+
+            sx = collaps[0]
+            face = collaps[1]
+            S.remove(sx)
+
+            if progress :
+                print('Collapsing simplex : ' + str(sx) + ' by the face : ' + str(face))
+
+            for comb in combinations(sx, len(face)):
+                if not face == comb :
+                    is_face = True
+                    for sx2 in S:
+                        if set(comb).issubset(set(sx2)):
+                            is_face = False
+                            break
+                    if is_face:
+                        S.append(comb)
+
+            if progress:
+                print('Remaining simplices after performed collapse: ' + str(S) + '\n')
+
+    if progress :
+        print('Collapse finished, giving result : ' + str(S))
+
+    return S
 
 
 if __name__ == '__main__':
