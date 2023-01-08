@@ -1,7 +1,9 @@
 import math
 import matplotlib.pyplot as plt
 import numpy as np
-from main import find_optimal_r
+from main import find_optimal_r, find_optimal_R
+from export_triangulation_to_ply import export_ply
+from gudhi import AlphaComplex
 
 
 def plot_sphere_with_points(r, points):
@@ -51,6 +53,64 @@ def generate_equidistributed_points_on_sphere(N, r, epsilon=0):
 
 # print(N_count)
 # plot_sphere_with_points(1, generated_points)
-points = generate_equidistributed_points_on_sphere(56, 1)
-optimal_r = find_optimal_r(points, 0, 1)
-print(optimal_r)
+#points = generate_equidistributed_points_on_sphere(56, 1)
+#optimal_r = find_optimal_r(points, 0, 1)
+#print(optimal_r)
+
+# x = []
+# y = []
+# z = []
+#
+# for point in points:
+#     x.append(point[0])
+#     y.append(point[1])
+#     z.append(point[2])
+# print(x)
+# print(y)
+# print(z)
+
+def sphericalcoordinate(x, y) :
+    return [math.cos(x) * math.cos(y), math.sin(x) * math.cos(y), math.sin(y)]
+def NX(n, x):
+    pts = []
+
+    start = (-1. + 1. / (n - 1.))
+    increment = (2. - 2. / ( n - 1. ) ) / (n - 1.)
+    for j in range(0 , n):
+        s = start + j * increment
+        pts.append(
+        sphericalcoordinate(s * x, math.pi / 2. * math.copysign(1, s) * (1. - math.sqrt(1. - abs(s)))))
+    return pts
+
+
+def generate_points(n):
+    return NX(n, 0.1 + 1.2 * n)
+
+
+points = generate_points(50)
+print(points)
+#plot_sphere_with_points(1,points)
+
+r, vr_cx = find_optimal_r(points, 0.25, 0.7, 0.1)
+R, cech_cx = find_optimal_R(points, r/2, r*2, 0.1, eps=1e-6)
+
+cech_sxes = cech_cx
+'''sphere = SimplicialComplex(simplices=cech_sxes)
+print(sphere.euler_characteristics())
+print(sphere.betti_number(0))
+print(sphere.betti_number(1))
+print(sphere.betti_number(2))'''
+
+ac = AlphaComplex(points)
+stree = ac.create_simplex_tree(max_alpha_square=R ** 2)
+
+cech_sxes = []
+for simplex in stree.get_simplices() :
+    cech_sxes.append(tuple(simplex[0]))
+
+data = export_ply(cech_sxes, points)
+
+f = open("fifty-points.ply", "w")
+f.write(data)
+f.close()
+print(r)
