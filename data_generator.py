@@ -1,17 +1,9 @@
 import math
 import matplotlib.pyplot as plt
 import numpy as np
-<<<<<<< HEAD
 from main import find_optimal_r, find_optimal_R
 from export_triangulation_to_ply import export_ply
 from gudhi import AlphaComplex
-=======
-from gudhi.alpha_complex import AlphaComplex
-from mogutda import SimplicialComplex
-
-from export_triangulation_to_ply import export_ply
-from main import find_optimal_r, find_optimal_R
->>>>>>> eb94b98ceeef8c74d50bb0fe9e3102c354e63cfc
 
 
 def plot_sphere_with_points(r, points):
@@ -61,7 +53,6 @@ def generate_equidistributed_points_on_sphere(N, r, epsilon=0):
 
 # print(N_count)
 # plot_sphere_with_points(1, generated_points)
-<<<<<<< HEAD
 #points = generate_equidistributed_points_on_sphere(56, 1)
 #optimal_r = find_optimal_r(points, 0, 1)
 #print(optimal_r)
@@ -113,41 +104,13 @@ print(sphere.betti_number(2))'''
 ac = AlphaComplex(points)
 stree = ac.create_simplex_tree(max_alpha_square=R ** 2)
 
-=======
-points = generate_equidistributed_points_on_sphere(56, 1)
-optimal_r, vr_cx = find_optimal_r(points, 0, 1, 0.5)
-print(optimal_r)
-optimal_R, alpha_cx = find_optimal_R(points, 0, 1, 0.5)
-print(optimal_R)
-
-ac = AlphaComplex(points)
-stree = ac.create_simplex_tree(max_alpha_square=optimal_R ** 2)
->>>>>>> eb94b98ceeef8c74d50bb0fe9e3102c354e63cfc
 cech_sxes = []
 for simplex in stree.get_simplices() :
     cech_sxes.append(tuple(simplex[0]))
 
-<<<<<<< HEAD
 data = export_ply(cech_sxes, points)
 
 f = open("fifty-points.ply", "w")
 f.write(data)
 f.close()
 print(r)
-=======
-sphere = SimplicialComplex(simplices=cech_sxes)
-betti0 = sphere.betti_number(0)
-betti1 = sphere.betti_number(1)
-betti2 = sphere.betti_number(2)
-euler = sphere.euler_characteristics()
-print(betti0)
-print(betti1)
-print(betti2)
-print(euler)
-
-data = export_ply(cech_sxes, points)
-
-f = open("sphere_generated.ply", "w")
-f.write(data)
-f.close()
->>>>>>> eb94b98ceeef8c74d50bb0fe9e3102c354e63cfc
