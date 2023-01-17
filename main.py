@@ -3,6 +3,8 @@ from utils import read_data, distance, numberOfComponents, powerset, collapse
 import numpy as np
 from gudhi import AlphaComplex
 from itertools import chain, combinations
+from mogutda import SimplicialComplex
+import numpy as np
 
 from export_triangulation_to_ply import export_ply
 
@@ -81,14 +83,15 @@ def VR_edges_only(S, epsilon) :
 
 # Find the optimal parameter r, using VR complex that only generates edges.
 # The function returns the optimal r, so that the VR complex it generates is connected
-def find_optimal_r(points, start, stop, init_step, eps=1e-6, factor=2) :
+def find_optimal_r(points, start, stop, init_step, eps=1e-6, factor=2, verbose=True) :
     step = init_step
     curr_r = -1
 
     bottom_r = start
     top_r = stop
     while step > eps:
-        print('Searching interval from ' + str(bottom_r) + ' to ' + str(top_r) + ' with step ' + str(step))
+        if verbose :
+            print('Searching interval from ' + str(bottom_r) + ' to ' + str(top_r) + ' with step ' + str(step))
         for r in np.arange(bottom_r, top_r, step):
             rips_complex = VR_edges_only(points, r)
 
@@ -173,14 +176,15 @@ def construct_complex(cech) :
     return complex
 
 # Find the optimal parameter R, using the Čech complex.
-def find_optimal_R(points, start, stop, init_step, eps=1e-6, factor=2) :
+def find_optimal_R(points, start, stop, init_step, eps=1e-6, factor=2, verbose=True) :
     step = init_step
     curr_R = -1
 
     bottom_R = start
     top_R = stop
     while step > eps :
-        print('Searching interval from ' + str(bottom_R) + ' to ' + str(top_R) + ' with step ' + str(step))
+        if verbose :
+            print('Searching interval from ' + str(bottom_R) + ' to ' + str(top_R) + ' with step ' + str(step))
         for R in np.arange(bottom_R, top_R, step) :
 
             #cech_cx = cech(points, R)
@@ -210,8 +214,8 @@ def find_optimal_R(points, start, stop, init_step, eps=1e-6, factor=2) :
                 #print(betti1)
                 #print(betti2)
             """
-
-            print(str(R) + ' --- b0 : ' + str(betti0) + ' b1: ' + str(betti1) + ' b2: ' + str(betti2) + ' Euler: ' + str(euler))
+            if verbose :
+                print(str(R) + ' --- b0 : ' + str(betti0) + ' b1: ' + str(betti1) + ' b2: ' + str(betti2) + ' Euler: ' + str(euler))
             if betti0 == 1 and betti1 == 0 and euler >= 2:
                 curr_R = R
                 top_R = R
@@ -228,7 +232,7 @@ def find_optimal_R(points, start, stop, init_step, eps=1e-6, factor=2) :
         print('Found no sphere on given interval.')
         return -1, cech_sxes
 
-def checkObsolescence(points, r, R) :
+def checkObsolescence(points, r, R, verbose=True) :
     obsolete_points = []
     vital_points = []
     points_copy = points.copy()
@@ -238,7 +242,7 @@ def checkObsolescence(points, r, R) :
             continue
 
         points_copy.remove(p)
-        print(len(points_copy))
+        #print(len(points_copy))
 
         #cech_cx = cech(points_copy, R)
         ac = AlphaComplex(points_copy)
@@ -258,37 +262,32 @@ def checkObsolescence(points, r, R) :
         rips_complex = VR_edges_only(points_copy, r)
         vr_components = numberOfComponents(rips_complex[0], rips_complex[1])
 
-        print(str(R) + ' --- b0 : ' + str(betti0) + ' b1: ' + str(betti1) + ' b2: ' + str(betti2) + ' Euler: ' + str(euler))
+        if verbose :
+            print(str(R) + ' --- b0 : ' + str(betti0) + ' b1: ' + str(betti1) + ' b2: ' + str(betti2) + ' Euler: ' + str(euler))
 
         if betti0 == 1 and vr_components == 1 and euler == 2:
-            print('Found obsolete point ' + str(p))
+            if verbose :
+                print('Found obsolete point ' + str(p))
             obsolete_points.append(p)
         else :
-            print(str(p) + ' not obsolete')
+            if verbose :
+                print(str(p) + ' not obsolete')
             vital_points.append(p)
             points_copy.append(p)
 
     return vital_points, obsolete_points
 
 
-from mogutda import SimplicialComplex
-import numpy as np
-
 if __name__ == '__main__':
     points = read_data('./data/sensors.txt')
+    verbose = False
 
-    r, vr_cx = find_optimal_r(points, 0.25, 0.7, 0.1)
-    R, cech_cx = find_optimal_R(points, r/2, r*2, 0.1, eps=1e-6)
+    r, vr_cx = find_optimal_r(points, 0.25, 0.7, 0.1, verbose=verbose)
+    R, cech_cx = find_optimal_R(points, r/2, r*2, 0.1, eps=1e-6, verbose=verbose)
     
-    cech_sxes = cech_cx
-    sphere = SimplicialComplex(simplices=cech_sxes)
-    print(sphere.euler_characteristics())
-    print(sphere.betti_number(0))
-    print(sphere.betti_number(1))
-    print(sphere.betti_number(2))
-
-    r = 0.44999999999999996
-    R = 0.3561355590820312
+    #cech_sxes = cech_cx
+    #sphere = SimplicialComplex(simplices=cech_sxes)
+    #print(f'Optimal sphere :  Euler : {sphere.euler_characteristics()} -- b0 : {sphere.betti_number(0)} -- b1 : {sphere.betti_number(1)} -- b2 : {sphere.betti_number(2)}')
 
     ac = AlphaComplex(points)
     stree = ac.create_simplex_tree(max_alpha_square=R ** 2)
@@ -301,22 +300,17 @@ if __name__ == '__main__':
     #betti1 = -1
     #cech_sxes = cech_cx
     sphere = SimplicialComplex(simplices=cech_sxes)
-    betti0 = sphere.betti_number(0)
-    betti1 = sphere.betti_number(1)
-    betti2 = sphere.betti_number(2)
-    euler = sphere.euler_characteristics()
-    print(betti0)
-    print(betti1)
-    print(betti2)
-    print(euler)
+    print(f'Optimal sphere :  Euler : {sphere.euler_characteristics()} -- b0 : {sphere.betti_number(0)} -- b1 : {sphere.betti_number(1)} -- b2 : {sphere.betti_number(2)}')
     data = export_ply(cech_sxes, points)
 
     f = open("sphere.ply", "w")
     f.write(data)
     f.close()
 
-    vital_points, obsoletePoints = checkObsolescence(points, r, R)
+    vital_points, obsoletePoints = checkObsolescence(points, r, R, verbose=verbose)
+    print('Found vital points : ')
     print(vital_points)
+    print('Found obsolete points : ')
     print(obsoletePoints)
 
 
@@ -327,14 +321,7 @@ if __name__ == '__main__':
         cech_sxes.append(tuple(simplex[0]))
 
     sphere = SimplicialComplex(simplices=cech_sxes)
-    betti0 = sphere.betti_number(0)
-    betti1 = sphere.betti_number(1)
-    betti2 = sphere.betti_number(2)
-    euler = sphere.euler_characteristics()
-    print(betti0)
-    print(betti1)
-    print(betti2)
-    print(euler)
+    print(f'Trimmed sphere :  Euler : {sphere.euler_characteristics()} -- b0 : {sphere.betti_number(0)} -- b1 : {sphere.betti_number(1)} -- b2 : {sphere.betti_number(2)}')
 
     data = export_ply(cech_sxes, points)
 
